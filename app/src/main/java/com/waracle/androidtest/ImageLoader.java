@@ -20,6 +20,8 @@ import java.security.InvalidParameterException;
 
 class ImageLoader
 {
+    private static final String TAG = ImageLoader.class.getSimpleName();
+
     private TreeMap<String, Bitmap> m_imageCache;
 
 
@@ -32,35 +34,71 @@ class ImageLoader
         }
 
         protected Bitmap doInBackground(String... imageUrls) {
-
-            //Log.v("", "loading image " + imageUrls[0]);
             imageUrlString = imageUrls[0];
 
-            Bitmap mIcon11 = null;
             try {
-                URL imageUrl = new URL(imageUrlString);
-                InputStream in = imageUrl.openStream();
-                mIcon11 = BitmapFactory.decodeStream(in);
-            } catch (Exception e) {
-                Log.e("Error", e.getMessage());
-                e.printStackTrace();
+                Bitmap loadedBitmap = convertToBitmap(loadImageData(imageUrlString));
+
+                if (loadedBitmap == null && imageUrlString.startsWith("http:"))
+                {
+                    String imageUrlStringHttps = imageUrlString.replaceFirst("http", "https");
+                    loadedBitmap = convertToBitmap(loadImageData(imageUrlStringHttps));
+                }
+
+                return loadedBitmap;
+            } catch (IOException e) {
+                Log.e(TAG, e.getMessage());
             }
-            return mIcon11;
+
+            return null;
         }
 
 
         protected void onPostExecute(Bitmap result) {
-
-            m_imageCache.put(imageUrlString, result);
-            bmImage.setImageBitmap(result);
+            if (result != null) {
+                m_imageCache.put(imageUrlString, result);
+                bmImage.setImageBitmap(result);
+            }
         }
     }
 
+
+
     public ImageLoader()
     {
+        // Create  map to hold loaded images
         m_imageCache = new TreeMap();
     }
 
+
+    private static byte[] loadImageData(String url) throws IOException {
+        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+        InputStream inputStream = null;
+        try {
+            try {
+                // Read data from workstation
+                inputStream = connection.getInputStream();
+            } catch (IOException e) {
+                // Read the error from the workstation
+                inputStream = connection.getErrorStream();
+            }
+
+            // Can you think of a way to make the entire
+            // HTTP more efficient using HTTP headers??
+
+            return StreamUtils.readUnknownFully(inputStream);
+        } finally {
+            // Close the input stream if it exists.
+            StreamUtils.close(inputStream);
+
+            // Disconnect the connection
+            connection.disconnect();
+        }
+    }
+
+    private static Bitmap convertToBitmap(byte[] data) {
+        return BitmapFactory.decodeByteArray(data, 0, data.length);
+    }
     /**
      * Simple function for loading a bitmap image from the web
      *
@@ -72,15 +110,7 @@ class ImageLoader
             throw new InvalidParameterException("URL is empty!");
         }
 
-        // Can you think of a way to improve loading of bitmaps
-        // that have already been loaded previously??
-
-//        try {
-//            setImageView(imageView, convertToBitmap(loadImageData(url)));
-//        } catch (IOException e) {
-//            Log.e(TAG, e.getMessage());
-//        }
-
+        // improve loading of bitmaps that have already been loaded previously
         Bitmap cachedBitmap = m_imageCache.get(url);
         if (cachedBitmap != null) {
             imageView.setImageBitmap(cachedBitmap);
