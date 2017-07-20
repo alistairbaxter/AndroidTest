@@ -3,6 +3,7 @@ package com.waracle.androidtest;
 import android.annotation.SuppressLint;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.v4.app.FragmentManager;
 import android.support.v4.app.ListFragment;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -32,13 +33,22 @@ public class MainActivity extends AppCompatActivity {
     private static String JSON_URL = "https://gist.githubusercontent.com/hart88/198f29ec5114a3ec3460/" +
             "raw/8dd19a88f9b8d24c23d9960f3300d0c917a4f07c/cake.json";
 
+    private static String LIST_FRAGMENT_TAG = "ListFragmentTag";
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        if (savedInstanceState == null) {
-            getSupportFragmentManager().beginTransaction()
-                    .add(R.id.container, new PlaceholderFragment())
+
+        // find the retained fragment on activity restarts
+        FragmentManager fm = getSupportFragmentManager();
+        PlaceholderFragment retainedFragment = (PlaceholderFragment) fm.findFragmentByTag(LIST_FRAGMENT_TAG);
+
+        // create the fragment and data the first time
+        if (retainedFragment == null) {
+            fm.beginTransaction()
+                    .add(R.id.container, new PlaceholderFragment(), LIST_FRAGMENT_TAG)
                     .commit();
         }
     }
@@ -93,12 +103,22 @@ public class MainActivity extends AppCompatActivity {
         public void onActivityCreated(Bundle savedInstanceState) {
             super.onActivityCreated(savedInstanceState);
 
-            // Create and set the list adapter.
-            mAdapter = new MyAdapter();
+            if (savedInstanceState == null) {
+                // Create and set the list adapter.
+                mAdapter = new MyAdapter();
 
-            // Load data from net.
-            DataLoaderTask loadListData = new DataLoaderTask();
-            loadListData.execute();
+                // Load data from net.
+                DataLoaderTask loadListData = new DataLoaderTask();
+                loadListData.execute();
+
+            }
+            else
+            {
+                mListView.setAdapter(mAdapter);
+            }
+
+            // retain this fragment
+            setRetainInstance(true);
         }
 
         // Asynchronous loading for the JSON file
