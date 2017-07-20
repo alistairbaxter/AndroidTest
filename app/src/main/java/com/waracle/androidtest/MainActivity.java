@@ -1,6 +1,7 @@
 package com.waracle.androidtest;
 
 import android.annotation.SuppressLint;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.ListFragment;
 import android.support.v7.app.AppCompatActivity;
@@ -84,7 +85,7 @@ public class MainActivity extends AppCompatActivity {
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
                                  Bundle savedInstanceState) {
             View rootView = inflater.inflate(R.layout.fragment_main, container, false);
-            mListView = (ListView) rootView.findViewById(R.id.list);
+            mListView = (ListView) rootView.findViewById(android.R.id.list);
             return rootView;
         }
 
@@ -94,16 +95,33 @@ public class MainActivity extends AppCompatActivity {
 
             // Create and set the list adapter.
             mAdapter = new MyAdapter();
-            mListView.setAdapter(mAdapter);
 
             // Load data from net.
-            try {
-                JSONArray array = loadData();
-                mAdapter.setItems(array);
-            } catch (IOException | JSONException e) {
-                Log.e(TAG, e.getMessage());
-            }
+            DataLoaderTask loadListData = new DataLoaderTask();
+            loadListData.execute();
         }
+
+        // Asynchronous loading for the JSON file
+        public class DataLoaderTask extends AsyncTask<Integer,Integer,String> {
+            JSONArray m_array;
+
+            @Override
+            protected String doInBackground(Integer... params) {
+                try {
+                    m_array = loadData();
+
+                } catch (IOException | JSONException e) {
+                    Log.e(TAG, e.getMessage());
+                }
+                return "Task Completed.";
+            }
+
+            @Override
+            protected void onPostExecute(String result) {
+
+                mAdapter.setItems(m_array);
+                mListView.setAdapter(mAdapter);
+            }
 
 
         private JSONArray loadData() throws IOException, JSONException {
@@ -131,6 +149,7 @@ public class MainActivity extends AppCompatActivity {
                 urlConnection.disconnect();
             }
         }
+    }
 
         /**
          * Returns the charset specified in the Content-Type of this header,
