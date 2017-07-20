@@ -35,6 +35,7 @@ public class MainActivity extends AppCompatActivity {
 
     private static String LIST_FRAGMENT_TAG = "ListFragmentTag";
 
+    private PlaceholderFragment m_cakeListFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,12 +44,13 @@ public class MainActivity extends AppCompatActivity {
 
         // find the retained fragment on activity restarts
         FragmentManager fm = getSupportFragmentManager();
-        PlaceholderFragment retainedFragment = (PlaceholderFragment) fm.findFragmentByTag(LIST_FRAGMENT_TAG);
+        m_cakeListFragment = (PlaceholderFragment) fm.findFragmentByTag(LIST_FRAGMENT_TAG);
 
         // create the fragment and data the first time
-        if (retainedFragment == null) {
+        if (m_cakeListFragment == null) {
+            m_cakeListFragment = new PlaceholderFragment();
             fm.beginTransaction()
-                    .add(R.id.container, new PlaceholderFragment(), LIST_FRAGMENT_TAG)
+                    .add(R.id.container, m_cakeListFragment, LIST_FRAGMENT_TAG)
                     .commit();
         }
     }
@@ -69,6 +71,10 @@ public class MainActivity extends AppCompatActivity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_refresh) {
+
+            // Load data from net.
+            m_cakeListFragment.clearData();
+            m_cakeListFragment.refreshData();
             return true;
         }
 
@@ -108,17 +114,26 @@ public class MainActivity extends AppCompatActivity {
                 mAdapter = new MyAdapter();
 
                 // Load data from net.
-                DataLoaderTask loadListData = new DataLoaderTask();
-                loadListData.execute();
+                refreshData();
 
-            }
-            else
-            {
+            } else {
                 mListView.setAdapter(mAdapter);
             }
 
             // retain this fragment
             setRetainInstance(true);
+        }
+
+        public void refreshData()
+        {
+            DataLoaderTask loadListData = new DataLoaderTask();
+            loadListData.execute();
+        }
+
+        public void clearData()
+        {
+            mAdapter.setItems(new JSONArray());
+            mListView.setAdapter(mAdapter);
         }
 
         // Asynchronous loading for the JSON file
@@ -253,3 +268,4 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 }
+
