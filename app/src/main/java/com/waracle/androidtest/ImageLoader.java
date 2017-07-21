@@ -7,9 +7,7 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.widget.ImageView;
 
-import java.io.IOException;
 import java.io.InputStream;
-import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.TreeMap;
 import java.security.InvalidParameterException;
@@ -73,7 +71,7 @@ class ImageLoader
     public ImageLoader()
     {
         // Create  map to hold cached images
-        m_imageCache = new TreeMap();
+        m_imageCache = new TreeMap<String, Bitmap>();
     }
 
     /**

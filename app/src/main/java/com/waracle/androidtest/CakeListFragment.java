@@ -106,10 +106,7 @@ public class CakeListFragment extends ListFragment {
             URL url = new URL(mJsonUrl);
             HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
             try {
-                InputStream in = new BufferedInputStream(urlConnection.getInputStream());
-
                 BufferedReader br = new BufferedReader(new InputStreamReader(url.openStream()));
-                String jsonText = new String();
                 StringBuilder sb = new StringBuilder();
                 String line;
                 while ((line = br.readLine()) != null) {
@@ -117,8 +114,7 @@ public class CakeListFragment extends ListFragment {
                 }
                 br.close();
 
-                jsonText = sb.toString();
-
+                String jsonText = sb.toString();
 
                 // Read string as JSON.
                 return new JSONArray(jsonText);
@@ -126,25 +122,6 @@ public class CakeListFragment extends ListFragment {
                 urlConnection.disconnect();
             }
         }
-    }
-
-    /**
-     * Returns the charset specified in the Content-Type of this header,
-     * or the HTTP default (ISO-8859-1) if none can be found.
-     */
-    public static String parseCharset(String contentType) {
-        if (contentType != null) {
-            String[] params = contentType.split(",");
-            for (int i = 1; i < params.length; i++) {
-                String[] pair = params[i].trim().split("=");
-                if (pair.length == 2) {
-                    if (pair[0].equals("charset")) {
-                        return pair[1];
-                    }
-                }
-            }
-        }
-        return "UTF-8";
     }
 
     private class MyAdapter extends BaseAdapter {
