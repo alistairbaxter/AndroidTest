@@ -70,8 +70,6 @@ class ImageLoader
         }
     }
 
-
-
     public ImageLoader()
     {
         // Create  map to hold cached images
@@ -83,7 +81,7 @@ class ImageLoader
      * or from a cached copy, if we have one
      *
      * @param url       image url
-     * @param imageView view to set image too.
+     * @param imageView view to set image to.
      */
     public void load(String url, ImageView imageView) {
         if (TextUtils.isEmpty(url)) {
