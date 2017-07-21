@@ -22,38 +22,46 @@ class ImageLoader
 {
     private static final String TAG = ImageLoader.class.getSimpleName();
 
+    // A Cache mapping urls to loaded bitmaps
     private TreeMap<String, Bitmap> m_imageCache;
 
-
+    // Asynchronous task to load individual images
     class ImageLoaderTask extends AsyncTask<String, Void, Bitmap> {
         ImageView bmImage;
         String imageUrlString;
 
+        // This task provides an image for a particular view
         public ImageLoaderTask(ImageView imageView) {
             this.bmImage = imageView;
         }
 
+        // Load a bitmap from our url in the Task
         protected Bitmap doInBackground(String... imageUrls) {
             imageUrlString = imageUrls[0];
+            Bitmap loadedBitmap = loadBitmap(imageUrlString);
+            if (loadedBitmap == null && imageUrlString.startsWith("http:")) {
+                String imageUrlStringHttps = imageUrlString.replaceFirst("http", "https");
+                loadedBitmap = loadBitmap(imageUrlStringHttps);
+            }
 
+            return loadedBitmap;
+        }
+
+        // Read from a url and build a bitmap
+        Bitmap loadBitmap(String imageUrlString) {
+            Bitmap loadedBitmap = null;
             try {
-                Bitmap loadedBitmap = convertToBitmap(loadImageData(imageUrlString));
-
-                if (loadedBitmap == null && imageUrlString.startsWith("http:"))
-                {
-                    String imageUrlStringHttps = imageUrlString.replaceFirst("http", "https");
-                    loadedBitmap = convertToBitmap(loadImageData(imageUrlStringHttps));
-                }
-
-                return loadedBitmap;
-            } catch (IOException e) {
+                URL imageUrl = new URL(imageUrlString);
+                InputStream in = imageUrl.openStream();
+                loadedBitmap = BitmapFactory.decodeStream(in);
+            } catch (Exception e) {
                 Log.e(TAG, e.getMessage());
             }
 
-            return null;
+            return loadedBitmap;
         }
 
-
+        // Store the bitmap in the image view that wanted it
         protected void onPostExecute(Bitmap result) {
             if (result != null) {
                 m_imageCache.put(imageUrlString, result);
@@ -66,41 +74,13 @@ class ImageLoader
 
     public ImageLoader()
     {
-        // Create  map to hold loaded images
+        // Create  map to hold cached images
         m_imageCache = new TreeMap();
     }
 
-
-    private static byte[] loadImageData(String url) throws IOException {
-        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
-        InputStream inputStream = null;
-        try {
-            try {
-                // Read data from workstation
-                inputStream = connection.getInputStream();
-            } catch (IOException e) {
-                // Read the error from the workstation
-                inputStream = connection.getErrorStream();
-            }
-
-            // Can you think of a way to make the entire
-            // HTTP more efficient using HTTP headers??
-
-            return StreamUtils.readUnknownFully(inputStream);
-        } finally {
-            // Close the input stream if it exists.
-            StreamUtils.close(inputStream);
-
-            // Disconnect the connection
-            connection.disconnect();
-        }
-    }
-
-    private static Bitmap convertToBitmap(byte[] data) {
-        return BitmapFactory.decodeByteArray(data, 0, data.length);
-    }
     /**
      * Simple function for loading a bitmap image from the web
+     * or from a cached copy, if we have one
      *
      * @param url       image url
      * @param imageView view to set image too.

@@ -22,8 +22,10 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
@@ -35,7 +37,7 @@ public class MainActivity extends AppCompatActivity {
 
     private static String LIST_FRAGMENT_TAG = "ListFragmentTag";
 
-    private PlaceholderFragment m_cakeListFragment;
+    private CakeListFragment mCakeListFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,13 +46,13 @@ public class MainActivity extends AppCompatActivity {
 
         // find the retained fragment on activity restarts
         FragmentManager fm = getSupportFragmentManager();
-        m_cakeListFragment = (PlaceholderFragment) fm.findFragmentByTag(LIST_FRAGMENT_TAG);
+        mCakeListFragment = (CakeListFragment) fm.findFragmentByTag(LIST_FRAGMENT_TAG);
 
         // create the fragment and data the first time
-        if (m_cakeListFragment == null) {
-            m_cakeListFragment = new PlaceholderFragment();
+        if (mCakeListFragment == null) {
+            mCakeListFragment = new CakeListFragment();
             fm.beginTransaction()
-                    .add(R.id.container, m_cakeListFragment, LIST_FRAGMENT_TAG)
+                    .add(R.id.container, mCakeListFragment, LIST_FRAGMENT_TAG)
                     .commit();
         }
     }
@@ -73,8 +75,8 @@ public class MainActivity extends AppCompatActivity {
         if (id == R.id.action_refresh) {
 
             // Load data from net.
-            m_cakeListFragment.clearData();
-            m_cakeListFragment.refreshData();
+            mCakeListFragment.clearData();
+            mCakeListFragment.refreshData();
             return true;
         }
 
@@ -84,18 +86,15 @@ public class MainActivity extends AppCompatActivity {
     /**
      * Fragment is responsible for loading in some JSON and
      * then displaying a list of cakes with images.
-     * Fix any crashes
-     * Improve any performance issues
-     * Use good coding practices to make code more secure
      */
-    public static class PlaceholderFragment extends ListFragment {
+    public static class CakeListFragment extends ListFragment {
 
-        private static final String TAG = PlaceholderFragment.class.getSimpleName();
+        private static final String TAG = CakeListFragment.class.getSimpleName();
 
         private ListView mListView;
         private MyAdapter mAdapter;
 
-        public PlaceholderFragment() { /**/ }
+        public CakeListFragment() { /**/ }
 
         @Override
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -126,25 +125,27 @@ public class MainActivity extends AppCompatActivity {
 
         public void refreshData()
         {
+            // Kick off a loaded task to get data from the internet
+            // and update the visible list when it's done
             DataLoaderTask loadListData = new DataLoaderTask();
             loadListData.execute();
         }
 
         public void clearData()
         {
+            // Clear the visible list
             mAdapter.setItems(new JSONArray());
             mListView.setAdapter(mAdapter);
         }
 
         // Asynchronous loading for the JSON file
         public class DataLoaderTask extends AsyncTask<Integer,Integer,String> {
-            JSONArray m_array;
+            JSONArray mArray;
 
             @Override
             protected String doInBackground(Integer... params) {
                 try {
-                    m_array = loadData();
-
+                    mArray = loadData();
                 } catch (IOException | JSONException e) {
                     Log.e(TAG, e.getMessage());
                 }
@@ -154,29 +155,28 @@ public class MainActivity extends AppCompatActivity {
             @Override
             protected void onPostExecute(String result) {
 
-                mAdapter.setItems(m_array);
+                mAdapter.setItems(mArray);
                 mListView.setAdapter(mAdapter);
             }
 
-
+        // Fetch JSON data from the web, and parse it
         private JSONArray loadData() throws IOException, JSONException {
             URL url = new URL(JSON_URL);
             HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
             try {
                 InputStream in = new BufferedInputStream(urlConnection.getInputStream());
 
-                // Can you think of a way to improve the performance of loading data
-                // using HTTP headers???
+                BufferedReader br=new BufferedReader(new InputStreamReader(url.openStream()));
+                String jsonText = new String();
+                StringBuilder sb = new StringBuilder();
+                String line;
+                while ((line = br.readLine()) != null) {
+                    sb.append(line+"\n");
+                }
+                br.close();
 
-                // Also, Do you trust any utils thrown your way????
+                jsonText = sb.toString();
 
-                byte[] bytes = StreamUtils.readUnknownFully(in);
-
-                // Read in charset of HTTP content.
-                String charset = parseCharset(urlConnection.getRequestProperty("Content-Type"));
-
-                // Convert byte array to appropriate encoded string.
-                String jsonText = new String(bytes, charset);
 
                 // Read string as JSON.
                 return new JSONArray(jsonText);
@@ -240,7 +240,6 @@ public class MainActivity extends AppCompatActivity {
                 return 0;
             }
 
-            @SuppressLint("ViewHolder")
             @Override
             public View getView(int position, View convertView, ViewGroup parent) {
                 LayoutInflater inflater = LayoutInflater.from(getActivity());
@@ -255,7 +254,7 @@ public class MainActivity extends AppCompatActivity {
                         desc.setText(object.getString("desc"));
                         mImageLoader.load(object.getString("image"), image);
                     } catch (JSONException e) {
-                        e.printStackTrace();
+                        Log.e(TAG, e.getMessage());
                     }
                 }
 
